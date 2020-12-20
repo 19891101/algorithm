@@ -3,6 +3,7 @@
 \usepackage{amsmath}
 \usepackage{listings}
 \usepackage{xcolor}
+\usepackage[colorlinks,linkcolor=blue]{hyperref}
 \setlength{\parindent}{0pt}
 \renewcommand{\baselinestretch}{1.0}
 \usepackage[justification=centering]{caption}
@@ -89,6 +90,10 @@ Node* Append(cnost std::string &s, size_t p, Node* last) {
 
 \section{复杂度}
 可以证明, 对于一个长度为$n$的串$s$, 树的节点的个数最多为$n+2$. 插入$n$个字符的时间复杂度也是$O(n)$的.
+
+\section{实现}
+\href{https://github.com/19891101/algorithm/blob/master/string/palindromic-tree/pa_tree.h}{implemention} 
+
 
 \section{参考}
 https://oi-wiki.org/string/pam/ \par

@@ -1,5 +1,10 @@
+#pragma once
+
 #include <array>
 #include <vector>
+
+namespace alg {
+namespace string {
 
 template <int N, typename Self>
 class PalindromicTree {
@@ -26,17 +31,27 @@ class PalindromicTree {
 
   class PalindromicTreeNode {
    public:
-    int length() const { return pools[index].len; }
-    Self &self() { return pools[index].self; }
+    int length() const {
+      return pools[index].len;
+    }
+    Self &self() {
+      return pools[index].self;
+    }
     PalindromicTreeNode son(int id) const {
       return PalindromicTreeNode(pools, pools[index].sons[id]);
     }
     PalindromicTreeNode fail() const {
       return PalindromicTreeNode(pools, pools[index].fail);
     }
-    size_t hash_index() const { return index; }
-    bool even_root() const { return index == 0; }
-    bool odd_root() const { return index == 1; }
+    size_t hash_index() const {
+      return index;
+    }
+    bool even_root() const {
+      return index == 0;
+    }
+    bool odd_root() const {
+      return index == 1;
+    }
 
     PalindromicTreeNode(std::vector<Node> &pools, size_t index)
         : pools(pools), index(index) {}
@@ -68,15 +83,21 @@ class PalindromicTree {
     return PalindromicTreeNode(pools_, contents_[id].second);
   }
 
-  size_t NodeNumber() const { return pools_.size() - 2; }
+  size_t NodeNumber() const {
+    return pools_.size() - 2;
+  }
 
   PalindromicTreeNode GetNodeByIndex(size_t id) {
     return PalindromicTreeNode(pools_, id + 2);
   }
 
-  PalindromicTreeNode OddRoot() { return PalindromicTreeNode(pools_, 1); }
+  PalindromicTreeNode OddRoot() {
+    return PalindromicTreeNode(pools_, 1);
+  }
 
-  PalindromicTreeNode EvenRoot() { return PalindromicTreeNode(pools_, 0); }
+  PalindromicTreeNode EvenRoot() {
+    return PalindromicTreeNode(pools_, 0);
+  }
 
  private:
   size_t NewNode(int len) {
@@ -102,3 +123,6 @@ class PalindromicTree {
   std::vector<std::pair<int, size_t>> contents_;
   size_t last_;
 };
+
+}  // namespace string
+}  // namespace alg
