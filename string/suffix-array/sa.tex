@@ -27,7 +27,7 @@
 	\item 计数排序
 	\item 基数排序
 	\item 最后的改进
-	\item 常数优化
+	\item 一些优化
 	\item height数组
 	\item 应用
 \end{itemize}
@@ -68,7 +68,7 @@ std::vector<int> ComputeSA1(const std::string &s) {
 
 \section{改进做法}
 优化的思路是这样的:设$rk_{w}[i]$表示以$i$开始的长度为$w$的子串的排名,即$s[i]\rightarrow s[i+w-1]$.那么对于$rk_{2w}$来说,它的计算可以借助于$rk_{w}$来进行.简答来说, 就是以$rk_{w}[i]$为第一关键字,以$rk_{w}[i+w]$为第二关键字进行排序,就可以求出$rk_{2w}$数组.
-\begin{lstlisting}[language=C++, caption={Normal}]
+\begin{lstlisting}[language=C++, caption={Better}]
 std::vector<int> ComputeSA2(const std::string &s) {
   int n = static_cast<int>(s.size());
   std::vector<int> sa(n);
@@ -99,5 +99,54 @@ std::vector<int> ComputeSA2(const std::string &s) {
   return sa;
 }
 \end{lstlisting}
-这个算法的复杂度为$O(nlog^{2}(n))$
+这个算法的复杂度为$O(nlog^{2}(n))$.接下来,进一步的改进需要借助于计数排序和基数排序.先了解下.
+
+\section{计数排序}
+假设一个待排列的序列中所有的元素只有$C$种, 那么可以通过计算每种元素的个数进行排列. 假设排列的元素有$n$个.这个的复杂度为$O(n+C)$. 示例代码如下: \par
+\begin{lstlisting}[language=C++, caption={Counting Sort}]
+template <typename Elem>
+std::vector<Elem> CountingSort(const std::vector<Elem> &eles,
+                               std::function<int(const Elem &)> functor,
+                               int C) {
+  int n = static_cast<int>(eles.size());
+  std::vector<int> bucket(C, 0);
+  for (int i = 0; i < n; ++i) {
+    ++bucket[functor(eles[i])];
+  }
+  for (int i = 1; i < C; ++i) {
+    bucket[i] += bucket[i - 1];
+  }
+  std::vector<Elem> result(n);
+  for (int i = n - 1; i >= 0; --i) {
+    result[--bucket[functor(eles[i])]] = eles[i];
+  }
+  return result;
+}
+\end{lstlisting}
+由14-16行可以看出, 这是一个稳定排序算法.
+
+\section{基数排序}
+如果待排序的元素有$k$个关键字, 可以先对第$k$个关键字进行稳定排序, 然后再对第$k-1$个元素进行稳定排序,以此类推,最后对第$1$个关键字进行稳定排序.如下图所示: \par
+\includegraphics[scale=0.6]{pic1.png} \par
+下面是代码示例: \par
+\begin{lstlisting}[language=C++, caption={Radix Sort}]
+template <typename Elem>
+std::vector<Elem>
+RadixSort(const std::vector<Elem> &eles, int k, const std::vector<int> &cs,
+          std::function<int(const Elem &, int index)> functor) {
+  std::vector<Elem> result = eles;
+  for (int i = k - 1; i >= 0; --i) {
+  result = CountingSort<Elem>(
+      result, std::bind(functor, std::placeholders::_1, i), cs[i]);
+  }
+  return result;
+}
+
+\end{lstlisting}
+
+\section{最后的改进}
+对第三步中$nlog^{2}(n)$的方法进行进行改进.可以将循环内的每次排序看作是两个关键字的排序,先对第二个关键字排序, 再对第一个关键字排序. \par
+\begin{lstlisting}[language=C++, caption={Last Improvement}]
+
+\end{lstlisting}
 \end{document}
