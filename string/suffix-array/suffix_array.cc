@@ -19,6 +19,23 @@ std::vector<int> ComputeSA1(const std::string &s) {
   return sa;
 }
 
+std::vector<int> UpdateRank(const std::vector<int> &sa,
+                            const std::vector<int> &old_rank, int n, int w) {
+  std::vector<int> rk(n);
+  rk[sa[0]] = 0;
+  for (int p = 0, i = 1; i < n; ++i) {
+    if (old_rank[sa[i]] == old_rank[sa[i - 1]] &&
+        ((sa[i] + w >= n && sa[i - 1] + w >= n) ||
+         (sa[i] + w < n && sa[i - 1] + w < n &&
+          old_rank[sa[i] + w] == old_rank[sa[i - 1] + w]))) {
+      rk[sa[i]] = p;
+    } else {
+      rk[sa[i]] = ++p;
+    }
+  }
+  return rk;
+}
+
 std::vector<int> ComputeSA2(const std::string &s) {
   int n = static_cast<int>(s.size());
   std::vector<int> sa(n);
@@ -33,48 +50,7 @@ std::vector<int> ComputeSA2(const std::string &s) {
                  ? (x + w < n && y + w < n ? rk[x + w] < rk[y + w] : x + w >= n)
                  : rk[x] < rk[y];
     });
-    std::vector<int> rk_tmp = rk;
-    rk[sa[0]] = 0;
-    for (int p = 0, i = 1; i < n; ++i) {
-      if (rk_tmp[sa[i]] == rk_tmp[sa[i - 1]] &&
-          ((sa[i] + w >= n && sa[i - 1] + w >= n) ||
-           (sa[i] + w < n && sa[i - 1] + w < n &&
-            rk_tmp[sa[i] + w] == rk_tmp[sa[i - 1] + w]))) {
-        rk[sa[i]] = p;
-      } else {
-        rk[sa[i]] = ++p;
-      }
-    }
-  }
-  return sa;
-}
-
-std::vector<int> ComputeSA3(const std::string &s) {
-  int n = static_cast<int>(s.size());
-  std::vector<int> sa(n);
-  std::vector<int> rk(n);
-  for (int i = 0; i < n; ++i) {
-    sa[i] = i;
-    rk[i] = s[i];
-  }
-  for (int w = 1; w < n; w <<= 1) {
-    std::sort(sa.begin(), sa.end(), [&](int x, int y) {
-      return rk[x] == rk[y]
-                 ? (x + w < n && y + w < n ? rk[x + w] < rk[y + w] : x + w >= n)
-                 : rk[x] < rk[y];
-    });
-    std::vector<int> rk_tmp = rk;
-    rk[sa[0]] = 0;
-    for (int p = 0, i = 1; i < n; ++i) {
-      if (rk_tmp[sa[i]] == rk_tmp[sa[i - 1]] &&
-          ((sa[i] + w >= n && sa[i - 1] + w >= n) ||
-           (sa[i] + w < n && sa[i - 1] + w < n &&
-            rk_tmp[sa[i] + w] == rk_tmp[sa[i - 1] + w]))) {
-        rk[sa[i]] = p;
-      } else {
-        rk[sa[i]] = ++p;
-      }
-    }
+    rk = UpdateRank(sa, rk, n, w);
   }
   return sa;
 }
@@ -110,29 +86,57 @@ RadixSort(const std::vector<Elem> &eles, int k, const std::vector<int> &cs,
   return result;
 }
 
-int main() {
-  struct Element {
-    std::vector<int> key;
-    Element(int a = 0, int b = 0, int c = 0) {
-      key.push_back(a);
-      key.push_back(b);
-      key.push_back(c);
-    }
-  };
-
-  constexpr int K = 3;
-  std::vector<int> cs = {3, 2, 3};
-  std::vector<Element> eles;
-  eles.emplace_back(2, 0, 0);
-  eles.emplace_back(1, 1, 2);
-  eles.emplace_back(0, 1, 0);
-  eles.emplace_back(2, 1, 0);
-  std::function<int(const Element &, int index)> functor =
-      [](const Element &x, int index) { return x.key[index]; };
-  eles = RadixSort<Element>(eles, K, cs, functor);
-  for (const auto &e : eles) {
-    std::cout << e.key[0] << " " << e.key[1] << " " << e.key[2] << "\n";
+std::vector<int> ComputeSA3(const std::string &s) {
+  int n = static_cast<int>(s.size());
+  int m = std::max(256, n) + 1;
+  std::vector<int> sa(n);
+  std::vector<int> rk(n);
+  std::vector<int> cnt(m, 0);
+  for (int i = 0; i < n; ++i) {
+    ++cnt[rk[i] = s[i]];
   }
+  for (int i = 1; i < m; ++i) {
+    cnt[i] += cnt[i - 1];
+  }
+  for (int i = n - 1; i >= 0; --i) {
+    sa[--cnt[rk[i]]] = i;
+  }
+  for (int w = 1; w < n; w <<= 1) {
+    sa = RadixSort<int>(sa, 2, {m, m}, [&](const int &x, int index) {
+      if (index == 0) {
+        return rk[x];
+      } else {
+        return x + w >= n ? 0 : rk[x + w] + 1;
+      }
+    });
+    rk = UpdateRank(sa, rk, n, w);
+  }
+  return sa;
+}
+
+int main() {
+  /*  struct Element {
+      std::vector<int> key;
+      Element(int a = 0, int b = 0, int c = 0) {
+        key.push_back(a);
+        key.push_back(b);
+        key.push_back(c);
+      }
+    };
+
+    constexpr int K = 3;
+    std::vector<int> cs = {3, 2, 3};
+    std::vector<Element> eles;
+    eles.emplace_back(2, 0, 0);
+    eles.emplace_back(1, 1, 2);
+    eles.emplace_back(0, 1, 0);
+    eles.emplace_back(2, 1, 0);
+    std::function<int(const Element &, int index)> functor =
+        [](const Element &x, int index) { return x.key[index]; };
+    eles = RadixSort<Element>(eles, K, cs, functor);
+    for (const auto &e : eles) {
+      std::cout << e.key[0] << " " << e.key[1] << " " << e.key[2] << "\n";
+    }*/
   /*
     std::vector<int> eles = {4, 3, 2, 0, 0, 2, 4};
     std::function<int(const int &)> functor = [](const int &x) { return x; };
@@ -142,10 +146,10 @@ int main() {
     std::cout << "\n";
     return 0; */
 
-  /*  auto sa = ComputeSA2("aabaaaab");
-    for (int x : sa) {
-      std::cout << x << " ";
-    }
-    std::cout << "\n"; */
+  auto sa = ComputeSA3("aabaaaab");
+  for (int x : sa) {
+    std::cout << x << " ";
+  }
+  std::cout << "\n";
   return 0;
 }
