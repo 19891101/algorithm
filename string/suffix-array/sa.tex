@@ -1,0 +1,103 @@
+\documentclass{article}
+\usepackage{xeCJK}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{xcolor}
+\setlength{\parindent}{0pt}
+\renewcommand{\baselinestretch}{1.0}
+\lstset{
+	frame=tb, % draw a frame at the top and bottom of the code block
+	showstringspaces=false, % don't mark spaces in strings
+	numbers=left, % display line numbers on the left
+	commentstyle=\color{green}, % comment color
+	keywordstyle=\color{blue}, % keyword color
+	stringstyle=\color{red} % string color
+}
+\usepackage[a4paper,left=20mm,right=20mm,top=15mm,bottom=15mm]{geometry}  
+
+\title{后缀数组}
+\author{MengChunlei}
+
+\begin{document}
+\maketitle
+\begin{itemize}
+	\item 定义
+	\item 一般做法
+	\item 改进做法
+	\item 计数排序
+	\item 基数排序
+	\item 最后的改进
+	\item 常数优化
+	\item height数组
+	\item 应用
+\end{itemize}
+\section{定义}
+对于一个长度为$n$的字符串$s:s[0],s[1],...,s[n-2],s[n-1]$,它对应的后缀数组也是一个长度为$n$的数组$sa$.其中$sa[i]$表示在所有$n$个后缀中,排第$i$名的后缀是哪个(第一个字母在$s$中的位置).
+比如$s$=aabaaaab,那么对应的$sa$ 为: \par
+$\begin{matrix} 
+index & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 \\ 
+s & a & a & b & a & a & a & a & b \\ 
+sa & 3 & 4 & 5 & 0 & 6 & 1 & 7 & 2 \\
+\end{matrix}$ \par
+第0名: aaaab\par
+第1名: aaab\par
+第2名: aab\par
+第3名: aabaaaab\par
+第4名: ab\par
+第5名: abaaaab\par
+第6名: b\par
+第7名: baaaab\par
+另外还有一个数组称之为rank数组$rk$,它的长度也是$n$,$rk[i]$表示以$s[i]$开始的后缀的排名.那么有以下关系: \par
+$sa[rk[i]]=rk[sa[i]]=i$ \par
+\section{一般做法}
+很容易想到$n^{2}log(n)$的做法.代码如下: \par
+\begin{lstlisting}[language=C++, caption={Normal}]
+std::vector<int> ComputeSA1(const std::string &s) {
+  int n = static_cast<int>(s.size());
+  std::vector<int> sa(n);
+  for (int i = 0; i < n; ++i) {
+    sa[i] = i;
+  }
+  std::sort(sa.begin(), sa.end(), [&](int p1, int p2) {
+    for (; p1 < n && p2 < n && s[p1] == s[p2]; ++p1, ++p2);
+    return p1 < n && p2 < n ? s[p1] < s[p2] : p1 == n;
+  });
+  return sa;
+}
+\end{lstlisting}
+
+\section{改进做法}
+优化的思路是这样的:设$rk_{w}[i]$表示以$i$开始的长度为$w$的子串的排名,即$s[i]\rightarrow s[i+w-1]$.那么对于$rk_{2w}$来说,它的计算可以借助于$rk_{w}$来进行.简答来说, 就是以$rk_{w}[i]$为第一关键字,以$rk_{w}[i+w]$为第二关键字进行排序,就可以求出$rk_{2w}$数组.
+\begin{lstlisting}[language=C++, caption={Normal}]
+std::vector<int> ComputeSA2(const std::string &s) {
+  int n = static_cast<int>(s.size());
+  std::vector<int> sa(n);
+  std::vector<int> rk(n);
+  for (int i = 0; i < n; ++i) {
+    sa[i] = i;
+    rk[i] = s[i];
+  }
+  for (int w = 1; w < n; w <<= 1) {
+    std::sort(sa.begin(), sa.end(), [&](int x, int y) {
+      return rk[x] == rk[y]
+                 ? (x + w < n && y + w < n ? rk[x + w] < rk[y + w] : x + w >= n)
+                 : rk[x] < rk[y];
+    });
+    std::vector<int> rk_tmp = rk;
+    rk[sa[0]] = 0;
+    for (int p = 0, i = 1; i < n; ++i) {
+      if (rk_tmp[sa[i]] == rk_tmp[sa[i - 1]] &&
+          ((sa[i] + w >= n && sa[i - 1] + w >= n) ||
+           (sa[i] + w < n && sa[i - 1] + w < n &&
+            rk_tmp[sa[i] + w] == rk_tmp[sa[i - 1] + w]))) {
+        rk[sa[i]] = p;
+      } else {
+        rk[sa[i]] = ++p;
+      }
+    }
+  }
+  return sa;
+}
+\end{lstlisting}
+这个算法的复杂度为$O(nlog^{2}(n))$
+\end{document}
